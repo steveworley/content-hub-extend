@@ -9,9 +9,17 @@ namespace Drupal\content_hub_extend;
 
 class Uri {
 
-  public function __construct($path, $type, $permission = 'access content') {
-    $path = strpos($path, 'edit') > -1 ? $path : $path . '/edit';
+  const LOAD_HOOK = '%content_hub_extend';
+  const ENTITY_ID = 1;
 
+  /**
+   * Uri constructor.
+   *
+   * @param $path
+   * @param $type
+   * @param string $permission
+   */
+  public function __construct($path, $type, $permission = 'access content') {
     $this->path = $path;
     $this->parts = explode('/', $path);
     $this->type = $type;
@@ -20,22 +28,34 @@ class Uri {
     return $this;
   }
 
+  public static function generatePath($path) {
+    return str_replace(self::ENTITY_ID, self::LOAD_HOOK . "/ch", $path);
+  }
+
+  /**
+   * Resolve a URI definition.
+   *
+   * Take the given URL and build a content hub path with valid arguments.
+   *
+   * @return array
+   */
   public function resolve() {
-    $key = 1;
+    $key = 0;
 
     foreach ($this->parts as $index => $part) {
-      if ($part == 1) {
+      if ($part == self::ENTITY_ID) {
         $key = $index;
+        break;
       }
     }
 
     return array(
-      'path' => str_replace(1, "%content_hub_extend/ch/{$this->type}", $this->path),
+      'path' => static::generatePath($this->path),
       'args' => array(
         'page' => array($this->type, $key),
         'access' => array($this->permission, $this->type, $key),
+        'load' => array($this->type, $key),
       ),
     );
-
   }
 }

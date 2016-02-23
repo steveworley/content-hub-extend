@@ -7,6 +7,16 @@
 use Drupal\content_hub_extend as content_hub_extend;
 
 /**
+ * Implements hook_init().
+ */
+function content_hub_extend_init() {
+  $autoload = dirname(__FILE__) . '/vendor/autoload.php';
+  if (!class_exists('Drupal\content_hub_extend\Security') && file_exists($autoload)) {
+    require_once $autoload;
+  }
+}
+
+/**
  * Implements hook_menu().
  */
 function content_hub_extend_menu() {
@@ -22,7 +32,9 @@ function content_hub_extend_menu() {
       continue;
     }
 
-    $entity = (object) array($info['entity keys']['id'] => 1);
+    $entity = (object) array(
+      $info['entity keys']['id'] => content_hub_extend\Uri::ENTITY_ID
+    );
     $uri = $info['uri callback']($entity);
 
     $edit_uri = new content_hub_extend\Uri($uri['path'], $type);
@@ -34,6 +46,7 @@ function content_hub_extend_menu() {
       'page arguments' => $edit_uri['args']['page'],
       'access callback' => array('content_hub_extend_access'),
       'access arguments' => $edit_uri['args']['access'],
+      'load arguments' => $edit_uri['args']['load'],
       'type' => MENU_LOCAL_TASK,
       'weight' => 5,
       'file' => 'content_hub_extend.pages.inc',
@@ -44,27 +57,18 @@ function content_hub_extend_menu() {
 }
 
 /**
- * Implements hook_init().
- */
-function content_hub_extend_init() {
-  $autoload = dirname(__FILE__) . '/vendor/autoload.php';
-  if (!class_exists('Drupal\content_hub_extend\Security') && file_exists($autoload)) {
-    require_once $autoload;
-  }
-}
-
-/**
  * Load an entity for the URL.
  *
  * @param $entity_id
+ *   The entity id that is being loaded.
+ * @param $entity_type
+ *   The entity type that is being loaded.
  *
  * @return object
  */
-function content_hub_extend_load($entity_id) {
-  $args = args();
-  $entity_type = end($args);
-
-  return entity_load($entity_type, $entity_id);
+function content_hub_extend_load($entity_id, $entity_type) {
+  $entities = entity_load($entity_type, array($entity_id));
+  return reset($entities);
 }
 
 /**
@@ -80,6 +84,7 @@ function content_hub_extend_load($entity_id) {
  * @return bool
  */
 function content_hub_extend_access($permission, $entity_type, $entity) {
+  content_hub_extend_init();
   $origin = variable_get('content_hub_connector_origin');
 
   $security = new content_hub_extend\Security();
