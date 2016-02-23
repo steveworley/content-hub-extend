@@ -21,6 +21,8 @@ function content_hub_extend_menu() {
     'weight' => 5,
     'file' => 'content_hub_extend.pages.inc',
   );
+
+  return $items;
 }
 
 /**
@@ -41,9 +43,11 @@ function content_hub_extend_init() {
  * @param $entity_type
  *   The entity type for the given $entity.
  * @param $entity
- *
+ *   The entity.
  */
 function content_hub_extend_access($permission, $entity_type, $entity) {
+  $origin = variable_get('content_hub_connector_origin');
+
   $security = new content_hub_extend\Security();
-  return user_access($permission) && $security->accessCheck($entity_type, $entity);
+  return user_access($permission) && $security->accessCheck($entity_type, $entity, $origin);
 }
