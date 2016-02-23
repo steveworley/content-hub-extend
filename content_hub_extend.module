@@ -11,16 +11,34 @@ use Drupal\content_hub_extend as content_hub_extend;
  */
 function content_hub_extend_menu() {
   $items = array();
-  $items['node/%node/content_hub'] = array(
-    'title' => 'Edit Source',
-    'page callback' => 'content_hub_extend_source_edit',
-    'page arguments' => array('node', 1),
-    'access callback' => array('content_hub_extend_access'),
-    'access arguments' => array('administer nodes', 'node', 1),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 5,
-    'file' => 'content_hub_extend.pages.inc',
-  );
+
+  // Dynamically generate content hub source edit URLs.
+  module_load_include('inc', 'content_hub_connector', 'content_hub_connector.entityconfig');
+
+  foreach (_content_hub_connector_get_entity_types() as $type => $bundle) {
+    $info = entity_get_info($type);
+
+    if ($info['uri callback'] == 'eck__entity__uri' || !is_callable($info['uri callback'])) {
+      continue;
+    }
+
+    $entity = (object) array($info['entity keys']['id'] => 1);
+    $uri = $info['uri callback']($entity);
+
+    $edit_uri = new content_hub_extend\Uri($uri['path'], $type);
+    $edit_uri = $edit_uri->resolve();
+
+    $items[$edit_uri['path']] = array(
+      'title' => 'Edit Source',
+      'page callback' => 'content_hub_extend_source_edit',
+      'page arguments' => $edit_uri['args']['page'],
+      'access callback' => array('content_hub_extend_access'),
+      'access arguments' => $edit_uri['args']['access'],
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 5,
+      'file' => 'content_hub_extend.pages.inc',
+    );
+  }
 
   return $items;
 }
@@ -36,6 +54,20 @@ function content_hub_extend_init() {
 }
 
 /**
+ * Load an entity for the URL.
+ *
+ * @param $entity_id
+ *
+ * @return object
+ */
+function content_hub_extend_load($entity_id) {
+  $args = args();
+  $entity_type = end($args);
+
+  return entity_load($entity_type, $entity_id);
+}
+
+/**
  * Check access for the currently viewed entity.
  *
  * @param $permission
@@ -44,6 +76,8 @@ function content_hub_extend_init() {
  *   The entity type for the given $entity.
  * @param $entity
  *   The entity.
+ *
+ * @return bool
  */
 function content_hub_extend_access($permission, $entity_type, $entity) {
   $origin = variable_get('content_hub_connector_origin');
