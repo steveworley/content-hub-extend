@@ -1,0 +1,11 @@
+{
+  "name": "hsf/content_hub_extend",
+  "type": "drupal-module",
+  "description": "Functionality extensions for Content Hub",
+  "repositories": [],
+  "autoload": {
+    "psr-4": {
+      "Drupal\\content_hub_extend\\": "src/"
+    }
+  }
+}

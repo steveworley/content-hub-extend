@@ -1,0 +1,49 @@
+<?php
+/**
+* @file
+* Extends the functionality provided by the Content Hub module.
+*/
+
+use Drupal\content_hub_extend as content_hub_extend;
+
+/**
+ * Implements hook_menu().
+ */
+function content_hub_extend_menu() {
+  $items = array();
+  $items['node/%node/content_hub'] = array(
+    'title' => 'Edit Source',
+    'page callback' => 'content_hub_extend_source_edit',
+    'page arguments' => array('node', 1),
+    'access callback' => array('content_hub_extend_access'),
+    'access arguments' => array('administer nodes', 'node', 1),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+    'file' => 'content_hub_extend.pages.inc',
+  );
+}
+
+/**
+ * Implements hook_init().
+ */
+function content_hub_extend_init() {
+  $autoload = dirname(__FILE__) . '/vendor/autoload.php';
+  if (!class_exists('Drupal\content_hub_extend\Security') && file_exists($autoload)) {
+    require_once $autoload;
+  }
+}
+
+/**
+ * Check access for the currently viewed entity.
+ *
+ * @param $permission
+ *   A permission string to check against.
+ * @param $entity_type
+ *   The entity type for the given $entity.
+ * @param $entity
+ *
+ */
+function content_hub_extend_access($permission, $entity_type, $entity) {
+  $security = new content_hub_extend\Security();
+  return user_access($permission) && $security->accessCheck($entity_type, $entity);
+}
