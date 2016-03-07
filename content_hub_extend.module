@@ -90,3 +90,27 @@ function content_hub_extend_access($permission, $entity_type, $entity) {
   $security = new content_hub_extend\Security();
   return user_access($permission) && $security->accessCheck($entity_type, $entity, $origin);
 }
+
+function content_hub_extend_iib_page_item() {
+
+  $sources = content_hub_extend\Source::getAll();
+  $options = array('' => ' - Content hub sources - ');
+
+  foreach ($sources as $source) {
+    if ($source['domain']) {
+      $options[$source['domain']] = $source['name'];
+    }
+  }
+
+  $items['content_hub_extend'] = array(
+    '#prefix' => '<div class="ch-sources">',
+    '#type' => 'select',
+    '#suffix' => '</div>',
+    '#options' => $options,
+    '#attached' => array(
+      'js' => array(drupal_get_path('module', 'content_hub_extend') . '/assets/content_hub_extend.iib.js'),
+    )
+  );
+
+  return $items;
+}

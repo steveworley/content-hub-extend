@@ -4,3 +4,4 @@ core = 7.x
 package = Content Hub
 
 dependencies[] = content_hub
+dependencies[] = iib
