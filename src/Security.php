@@ -10,6 +10,8 @@ use Drupal\content_hub_connector as content_hub_connector;
 
 class Security {
 
+  const PERMISSION_STRING = 'access content_hub_extend !source entities';
+
   /**
    * Get an entities origin.
    *
@@ -30,6 +32,18 @@ class Security {
   }
 
   /**
+   * Get an origin permission string for an entity.
+   *
+   * @param $entity_type
+   * @param $entity
+   * @return null|string
+   */
+  public function getEntityPermission($entity_type, $entity) {
+    list($entity_id,,) = entity_extract_ids($entity_type, $entity);
+    return t(SELF::PERMISSION_STRING, array('!source' => $this->getEntityOrigin($entity_type, $entity_id)));
+  }
+
+  /**
    * Access check for a given entity.
    *
    * @param $entity_type
@@ -46,7 +60,7 @@ class Security {
     list($entity_id,,) = entity_extract_ids($entity_type, $entity);
     $entity_origin = $this->getEntityOrigin($entity_type, $entity_id);
 
-    return $origin !== $entity_origin;
+    return !empty($entity_origin) && $origin !== $entity_origin;
   }
 
 }

@@ -88,9 +88,44 @@ function content_hub_extend_access($permission, $entity_type, $entity) {
   $origin = variable_get('content_hub_connector_origin');
 
   $security = new content_hub_extend\Security();
-  return user_access($permission) && $security->accessCheck($entity_type, $entity, $origin);
+
+  if (user_access('access content_hub_extend remote entities')) {
+    return user_access($permission) && $security->accessCheck($entity_type, $entity, $origin);
+  }
+
+  return
+    user_access($permission) &&
+    user_access($security->getEntityPermission($entity_type, $entity)) &&
+    $security->accessCheck($entity_type, $entity, $origin);
 }
 
+/**
+ * Implements hook_permission().
+ */
+function content_hub_extend_permission() {
+  $permissions = array(
+    'access content_hub_extend remote entities' => array(
+      'title' => t('Administer content hub remote entities'),
+      'description' => t('Controls visibility to the source site edit task for entities'),
+    ),
+  );
+
+  if ($sources = content_hub_get_sources()) {
+    foreach ($sources as $source) {
+      $perm = t('access content_hub_extend !source entities', array('!source' => $source['uuid']));
+      $permissions[$perm] = array(
+        'title' => t('Administer content hub entities from !source', array('!source' => $source['name'])),
+        'description' => t('Controls visibility to the source site edit task for entities'),
+      );
+    }
+  }
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_iib_page_item().
+ */
 function content_hub_extend_iib_page_item() {
 
   $sources = content_hub_extend\Source::getAll();
