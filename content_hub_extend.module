@@ -21,7 +21,8 @@ function content_hub_extend_init() {
  */
 function content_hub_extend_menu() {
   $items = array();
-
+  content_hub_extend_init();
+  
   // Dynamically generate content hub source edit URLs.
   module_load_include('inc', 'content_hub_connector', 'content_hub_connector.entityconfig');
 
