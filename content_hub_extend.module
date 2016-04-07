@@ -21,33 +21,39 @@ function content_hub_extend_init() {
  */
 function content_hub_extend_menu() {
   $items = array();
+
+  // Make sure the classes are available when registering menu items.
   content_hub_extend_init();
-  
-  // Dynamically generate content hub source edit URLs.
+
   module_load_include('inc', 'content_hub_connector', 'content_hub_connector.entityconfig');
 
-  foreach (_content_hub_connector_get_entity_types() as $type => $bundle) {
-    $info = entity_get_info($type);
+  // Dynamically generate content hub source edit URLs.
+  foreach (_content_hub_connector_get_entity_types() as $entity_type => $bundles) {
+    $info = entity_get_info($entity_type);
 
     if ($info['uri callback'] == 'eck__entity__uri' || !is_callable($info['uri callback'])) {
       continue;
     }
 
-    $entity = (object) array(
-      $info['entity keys']['id'] => content_hub_extend\Uri::ENTITY_ID
-    );
+    $entity_values = array($info['entity keys']['id'] => content_hub_extend\Uri::ENTITY_ID);
+
+    if (isset($info['entity keys']['name'])) {
+      $entity_values[$info['entity keys']['name']] = content_hub_extend\Uri::ENTITY_NAME;
+    }
+
+    $entity = entity_create($entity_type, $entity_values);
     $uri = $info['uri callback']($entity);
 
-    $edit_uri = new content_hub_extend\Uri($uri['path'], $type);
-    $edit_uri = $edit_uri->resolve();
+    $edit_uri = new content_hub_extend\Uri($uri['path'], $entity_type);
+    $edit_uri->resolve();
 
-    $items[$edit_uri['path']] = array(
+    $items[$edit_uri->get('path')] = array(
       'title' => 'Edit Source',
       'page callback' => 'content_hub_extend_source_edit',
-      'page arguments' => $edit_uri['args']['page'],
+      'page arguments' => $edit_uri->get('args.page'),
       'access callback' => array('content_hub_extend_access'),
-      'access arguments' => $edit_uri['args']['access'],
-      'load arguments' => $edit_uri['args']['load'],
+      'access arguments' => $edit_uri->get('args.access'),
+      'load arguments' => $edit_uri->get('args.load'),
       'type' => MENU_LOCAL_TASK,
       'weight' => 5,
       'file' => 'content_hub_extend.pages.inc',
@@ -111,14 +117,14 @@ function content_hub_extend_permission() {
     ),
   );
 
-  if ($sources = content_hub_get_sources()) {
-    foreach ($sources as $source) {
-      $perm = t('access content_hub_extend !source entities', array('!source' => $source['uuid']));
-      $permissions[$perm] = array(
-        'title' => t('Administer content hub entities from !source', array('!source' => $source['name'])),
-        'description' => t('Controls visibility to the source site edit task for entities'),
-      );
-    }
+  $sources = content_hub_extend\Source::getAll();
+
+  foreach ($sources as $source) {
+    $perm = t('access content_hub_extend !source entities', array('!source' => $source['uuid']));
+    $permissions[$perm] = array(
+      'title' => t('Administer content hub entities from !source', array('!source' => $source['name'])),
+      'description' => t('Controls visibility to the source site edit task for entities'),
+    );
   }
 
   return $permissions;
