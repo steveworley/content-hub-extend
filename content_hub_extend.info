@@ -3,5 +3,5 @@ description = Extend functionality provided by Content Hub.
 core = 7.x
 package = Content Hub
 
-dependencies[] = content_hub
+dependencies[] = content_hub_connector
 dependencies[] = iib
